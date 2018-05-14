@@ -70,9 +70,17 @@ class NodeRelayServer {
       let conf = this.config.relay.tasks[i];
       let isPull = conf.mode === 'pull';
       if (isPull && app === conf.app && !context.publishers.has(streamPath)) {
-        let hasApp = conf.edge.match(/rtmp:\/\/([^\/]+)\/([^\/]+)/);
+        let hasApp;
         conf.ffmpeg = this.config.relay.ffmpeg;
-        conf.inPath = hasApp ? `${conf.edge}/${stream}` : `${conf.edge}/${streamPath}`;
+        if(typeof conf.edge === 'function'){
+          let edgeServer = conf.edge(id, streamPath, args);
+          hasApp = edgeServer.match(/rtmp:\/\/([^\/]+)\/([^\/]+)/);
+          conf.inPath = hasApp ? `${edgeServer}/${stream}` : `${edgeServer}/${streamPath}`;
+        }
+        else{
+          hasApp = conf.edge.match(/rtmp:\/\/([^\/]+)\/([^\/]+)/);
+          conf.inPath = hasApp ? `${conf.edge}/${stream}` : `${conf.edge}/${streamPath}`;
+        }
         conf.ouPath = `rtmp://localhost:${this.config.rtmp.port}/${streamPath}`;
         let session = new NodeRelaySession(conf);
         session.id = id;
